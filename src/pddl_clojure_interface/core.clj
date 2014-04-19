@@ -18,13 +18,20 @@
      (binding [*out* w#]
        ~@body))))
 
-(defn get-PDDL-construct
-  "Get a PDDL code block."
-  [pddl-block pddl-file]
+(defn get-PDDL-construct-in-list
+  "Get a PDDL code block in a sexp"
+  [pddl-block ls]
   (filter #(and (seq? %)
                 (= (name pddl-block)
                    (name (first %))))
-          (read-sexp pddl-file)))
+          ls))
+
+
+(defn get-PDDL-construct
+  "Get a PDDL code block in a file"
+  [pddl-block pddl-file]
+  (get-PDDL-construct-in-list pddl-block
+                              (read-sexp pddl-file)))
 
 
 (defn get-PDDL-predicates
@@ -42,16 +49,23 @@
   [pddl-file]
   (first (get-PDDL-construct 'types pddl-file)))
 
-(defn add-part-to-PDDL
+(defn add-part-to-PDDL-list
   "Add the specified part to the
-specified position of a PDDL file"
-  [pddl-file position part]
-  
+specified position of a PDDL desription"
+  [ls position part]
   (map #(if (and (seq? %)
                  (= (keyword position) (first %)))
           (concat % part)
           %)
-       (read-sexp pddl-file)))
+       ls))
+
+(defn add-part-to-PDDL
+  "Add the specified part to the
+specified position of a PDDL file"
+  [pddl-file position part]
+  (add-part-to-PDDL-list (read-sexp pddl-file)
+                         position
+                         part))
 
 (defn create-PDDL-types
   "Add type to a list of entities"
@@ -68,10 +82,9 @@ specified position of a PDDL file"
                      type))
 
 (defn find-new-file-name
-  "Take a filename and determines, the new number
-that has to be added to create a new file. E.g.
-file1.img file2.img file3.img means that, file4.img
-has to be created"
+  "Take a filename and a extension and determine the revision number
+that has to be added to create that file.
+Example: If 'file1.png' and 'file2.png' exist return file3.png "
   [filename extension]
   (loop [n 0]
     (if-not (io/.exists (io/as-file
@@ -80,9 +93,9 @@ has to be created"
       (recur (inc n)))))
 
 (defn get-types-in-predicate
-  "Takes a PDDL predicate,
+  "Take a PDDL predicate,
   e.g. '(at ?x - location ?y - object)
-  and returns the involved types, e.g.
+  and return a list of the involved types, e.g.
   '(location object)"
   [pddl-pred]
   (remove

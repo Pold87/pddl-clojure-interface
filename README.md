@@ -1,6 +1,6 @@
 # PDDL/Clojure Interface
 
-A Clojure library designed to read and write PDDL file.
+A Clojure library designed to read and write PDDL files.
 
 ## Installation
 
